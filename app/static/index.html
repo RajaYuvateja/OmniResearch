@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: #ffffff; color: #09090b;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniResearch — Autonomous Multi-Agent Research Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css?v=20261009_v4">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* Inlined Core Minimalist Styles to guarantee instant render without cache delays */
+    :root {
+      --bg-page: #ffffff;
+      --bg-card: #ffffff;
+      --bg-subtle: #fafafa;
+      --bg-muted: #f4f4f5;
+      --border: #e4e4e7;
+      --border-dark: #18181b;
+      --border-subtle: #f0f0f2;
+      --text-main: #09090b;
+      --text-secondary: #52525b;
+      --text-muted: #71717a;
+      --text-light: #a1a1aa;
+      --black: #000000;
+      --white: #ffffff;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 16px -2px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+      --transition: all 0.15s ease-in-out;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background-color: #ffffff !important;
+      color: #09090b !important;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    .app-header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 28px;
+    }
+    .header-left, .header-center, .header-right { display: flex; align-items: center; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text-main); }
+    .brand-logo {
+      width: 32px; height: 32px; background: var(--black); color: var(--white);
+      border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+    }
+    .brand-title { font-weight: 700; font-size: 15px; letter-spacing: -0.02em; color: var(--text-main); }
+    .brand-sub { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .system-status {
+      display: flex; align-items: center; gap: 6px; font-size: 12px;
+      color: var(--text-secondary); background: var(--bg-subtle);
+      border: 1px solid var(--border); padding: 4px 10px; border-radius: 9999px;
+    }
+    .status-indicator { width: 7px; height: 7px; border-radius: 50%; background: var(--black); display: inline-block; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: var(--radius-sm);
+      cursor: pointer; transition: var(--transition); text-decoration: none; border: 1px solid transparent;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--black); color: var(--white); border-color: var(--black); }
+    .btn-primary:hover { background: #27272a; border-color: #27272a; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline { background: var(--white); color: var(--text-main); border-color: var(--border); }
+    .btn-outline:hover { background: var(--bg-subtle); border-color: var(--text-light); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); }
+    .btn-ghost:hover { color: var(--text-main); background: var(--bg-muted); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-icon-only { padding: 8px; width: 36px; height: 36px; }
+
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 11px; font-weight: 600; border-radius: 9999px; }
+    .badge-mono { background: var(--bg-muted); color: var(--text-main); border: 1px solid var(--border); font-family: var(--font-mono); }
+
+    .main-content { max-width: 1040px; margin: 0 auto; padding: 40px 20px 80px; }
+    .hero-section { margin-bottom: 36px; }
+    .hero-header { text-align: center; margin-bottom: 26px; }
+    .hero-pill {
+      display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; padding: 4px 10px; border: 1px solid var(--border);
+      border-radius: 9999px; background: var(--bg-subtle); color: var(--text-secondary); margin-bottom: 12px;
+    }
+    .hero-title { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; color: var(--text-main); margin-bottom: 10px; }
+    .hero-subtitle { font-size: 15px; color: var(--text-secondary); max-width: 680px; margin: 0 auto; line-height: 1.6; }
+
+    .query-box {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 8px; transition: var(--transition);
+    }
+    .query-box:focus-within { border-color: var(--border-dark); }
+    .input-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; }
+    .input-icon { color: var(--text-light); margin-top: 4px; flex-shrink: 0; }
+    .objective-textarea {
+      width: 100%; border: none; outline: none; font-family: inherit; font-size: 15px;
+      line-height: 1.5; color: var(--text-main); background: transparent; resize: vertical; min-height: 52px;
+    }
+    .objective-textarea::placeholder { color: var(--text-muted); }
+
+    .file-drop-zone {
+      margin: 4px 14px 10px; padding: 10px 14px; border: 1px dashed var(--border);
+      border-radius: var(--radius-sm); background: var(--bg-subtle);
+      display: flex; align-items: center; justify-content: space-between; transition: var(--transition);
+    }
+    .file-drop-zone.dragover { border-color: var(--black); background: #f4f4f5; }
+    .hidden-file-input { display: none !important; }
+    .file-drop-content { display: flex; align-items: center; gap: 12px; width: 100%; }
+    .file-browse-btn {
+      display: inline-flex; align-items: center; gap: 6px; background: var(--white);
+      border: 1px solid var(--border); color: var(--text-main); font-size: 12px; font-weight: 500;
+      padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition);
+    }
+    .file-browse-btn:hover { border-color: var(--border-dark); }
+    .file-drop-hint { font-size: 12px; color: var(--text-muted); }
+    .file-selected-badge {
+      display: flex; align-items: center; justify-content: space-between; width: 100%;
+      background: var(--white); border: 1px solid var(--border-dark); padding: 6px 12px; border-radius: var(--radius-sm);
+    }
+    .file-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-main); }
+    .file-name { font-weight: 600; }
+    .file-size { color: var(--text-muted); font-size: 11px; }
+    .file-remove-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; line-height: 1; }
+    .file-remove-btn:hover { color: var(--black); }
+
+    .form-actions-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 14px 6px; border-top: 1px solid var(--border-subtle);
+    }
+    .sample-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .chips-label { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-right: 2px; }
+    .chip {
+      background: var(--bg-muted); border: 1px solid var(--border); color: var(--text-secondary);
+      font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: var(--radius-sm);
+      cursor: pointer; transition: var(--transition); font-family: inherit;
+    }
+    .chip:hover { color: var(--text-main); border-color: var(--border-dark); }
+
+    .workspace-section { animation: fadeIn 0.25s ease-in-out; }
+    .session-bar {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    }
+    .session-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .attached-file-tag {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500;
+      color: var(--text-main); background: var(--bg-subtle); border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 9999px;
+    }
+    .session-title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); }
+    .session-exports { display: flex; gap: 6px; }
+
+    .stepper-card {
+      background: var(--bg-subtle); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px; margin-bottom: 24px;
+    }
+    .stepper-track { display: flex; align-items: center; justify-content: space-between; position: relative; margin-bottom: 16px; }
+    .step-item { display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 2; position: relative; text-align: center; }
+    .step-badge {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border);
+      background: var(--white); color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; transition: var(--transition);
+    }
+    .step-item.active .step-badge { background: var(--black); color: var(--white); border-color: var(--black); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12); }
+    .step-item.completed .step-badge { background: var(--black); color: var(--white); border-color: var(--black); }
+    .step-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+    .step-item.active .step-title, .step-item.completed .step-title { color: var(--text-main); }
+    .step-desc { font-size: 10px; color: var(--text-muted); }
+    .step-connector { flex: 1; height: 1px; background: var(--border); margin: 0 6px 20px; transition: var(--transition); }
+    .step-connector.completed { background: var(--black); }
+
+    .telemetry-box { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; }
+    .telemetry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .telemetry-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .telemetry-logs { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); max-height: 80px; overflow-y: auto; line-height: 1.6; }
+    .telemetry-logs.hidden-logs { display: none; }
+    .log-entry { padding: 1px 0; }
+
+    .tabs-bar { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; padding-bottom: 2px; }
+    .tab-item {
+      display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
+      padding: 8px 14px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer;
+      border-bottom: 2px solid transparent; transition: var(--transition); font-family: inherit;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+    .tab-item:hover { color: var(--text-main); background: var(--bg-subtle); }
+    .tab-item.active { color: var(--text-main); font-weight: 600; border-bottom-color: var(--black); background: var(--bg-subtle); }
+    .tab-badge { font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 9999px; background: var(--black); color: var(--white); }
+
+    .tab-panel { display: none; animation: fadeIn 0.2s ease-in-out; }
+    .tab-panel.active { display: block; }
+    .panel-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-sm); }
+    .panel-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+    .panel-meta { font-size: 12px; color: var(--text-muted); }
+    .toolbar-actions { display: flex; gap: 8px; }
+
+    .markdown-body { color: var(--text-main); line-height: 1.7; }
+    .markdown-body h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .markdown-body h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.015em; margin: 26px 0 12px; }
+    .markdown-body h3 { font-size: 15px; font-weight: 600; margin: 20px 0 10px; }
+    .markdown-body p { margin-bottom: 16px; color: #27272a; }
+    .markdown-body ul, .markdown-body ol { margin-bottom: 16px; padding-left: 24px; }
+    .markdown-body li { margin-bottom: 6px; color: #27272a; }
+    .markdown-body table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+    .markdown-body th, .markdown-body td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+    .markdown-body th { background: var(--bg-subtle); font-weight: 600; }
+    .markdown-body hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+    .markdown-body code { font-family: var(--font-mono); font-size: 12px; background: var(--bg-muted); padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+    .markdown-body blockquote { border-left: 3px solid var(--border-dark); padding-left: 14px; color: var(--text-secondary); font-style: italic; margin: 16px 0; }
+
+    /* Chatbot */
+    .chat-container { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; height: 640px; }
+    .chat-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-subtle); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+    .chat-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
+    .chat-subtitle { font-size: 11px; color: var(--text-muted); }
+    .chat-quick-chips { padding: 10px 16px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 6px; overflow-x: auto; background: var(--white); }
+    .chat-chip { background: var(--bg-subtle); border: 1px solid var(--border); color: var(--text-secondary); font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 9999px; cursor: pointer; white-space: nowrap; transition: var(--transition); font-family: inherit; }
+    .chat-chip:hover { background: var(--black); color: var(--white); border-color: var(--black); }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; background: var(--white); }
+    .chat-message { display: flex; gap: 12px; max-width: 86%; }
+    .chat-message.assistant { align-self: flex-start; }
+    .chat-message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--black); color: var(--white); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .chat-message.user .message-avatar { background: var(--border); color: var(--text-main); }
+    .message-content { padding: 12px 16px; border-radius: var(--radius-md); font-size: 13px; line-height: 1.6; }
+    .chat-message.assistant .message-content { background: var(--bg-subtle); border: 1px solid var(--border); color: var(--text-main); }
+    .chat-message.user .message-content { background: var(--black); color: var(--white); }
+    .chat-input-bar { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; background: var(--bg-subtle); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+    .chat-text-input { flex: 1; padding: 9px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--white); font-size: 13px; outline: none; font-family: inherit; transition: var(--transition); color: var(--text-main); }
+    .chat-text-input:focus { border-color: var(--black); }
+
+    /* Claims, Analytics, Sources */
+    .claims-summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; }
+    .stat-num { display: block; font-size: 22px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; }
+    .stat-label { font-size: 11px; color: var(--text-muted); }
+    .claims-stack { display: flex; flex-direction: column; gap: 12px; }
+    .claim-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; }
+    .claim-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .claim-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; border: 1px solid var(--border); }
+    .claim-badge.verified { background: var(--black); color: var(--white); border-color: var(--black); }
+    .claim-badge.partly { background: var(--bg-muted); color: var(--text-main); border-color: var(--text-light); }
+    .claim-badge.unverified { background: var(--white); color: var(--text-muted); border-color: var(--border); }
+    .claim-confidence { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+    .claim-body { font-size: 13px; font-weight: 500; color: var(--text-main); margin-bottom: 8px; line-height: 1.5; }
+    .claim-bottom { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+
+    .analytics-layout { display: flex; flex-direction: column; gap: 20px; }
+    .chart-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+    .card-heading { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-main); margin-bottom: 14px; }
+    .chart-display { display: flex; align-items: center; justify-content: center; min-height: 240px; }
+    .chart-img { max-width: 100%; height: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+    .insights-columns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .insights-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+    .bullet-list { padding-left: 18px; font-size: 13px; line-height: 1.6; }
+    .bullet-list li { margin-bottom: 8px; color: #27272a; }
+
+    .sources-meta-bar { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+    .sources-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .source-item { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; justify-content: space-between; }
+    .source-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+    .source-title { font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+    .source-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
+    .source-link { font-size: 11px; color: var(--black); text-decoration: underline; align-self: flex-start; }
+
+    /* Drawer */
+    .drawer {
+      position: fixed; top: 0; right: -380px; width: 380px; height: 100%;
+      background: var(--white); border-left: 1px solid var(--border); z-index: 100;
+      box-shadow: var(--shadow-lg); transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex; flex-direction: column;
+    }
+    .drawer.open { right: 0; }
+    .drawer-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .drawer-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
+    .btn-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); }
+    .btn-close:hover { color: var(--black); }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 14px; }
+    .history-card { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 10px; cursor: pointer; transition: var(--transition); background: var(--white); }
+    .history-card:hover { border-color: var(--black); background: var(--bg-subtle); }
+    .history-card-title { font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; line-height: 1.4; }
+    .history-card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); }
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.25); z-index: 99; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+    .drawer-backdrop.show { opacity: 1; pointer-events: auto; }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13px; }
+    .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--black); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--black); color: var(--white); padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); z-index: 200; opacity: 0; transform: translateY(10px); transition: var(--transition); pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+      .app-header { padding: 10px 16px; }
+      .main-content { padding: 20px 14px 60px; }
+      .hero-title { font-size: 24px; }
+      .claims-summary-grid, .insights-columns, .sources-grid { grid-template-columns: 1fr; }
+      .drawer { width: 320px; }
+    }
+  </style>
+</head>
+<body style="background-color: #ffffff; color: #09090b;">
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="m10 15 5-3-5-3v6z"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">OmniResearch</span>
+          <span class="brand-sub">Autonomous AI</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="system-status" id="engine-status-badge">
+        <span class="status-indicator"></span>
+        <span id="engine-status-text">Ready</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="btn btn-outline" id="new-research-btn" title="Start fresh research session">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>New</span>
+      </button>
+
+      <button class="btn btn-outline" id="history-toggle-btn" title="View past research sessions">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span>History</span>
+      </button>
+
+      <a href="/docs" target="_blank" class="btn btn-ghost" title="Interactive API Docs">API</a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    
+    <!-- Hero / Query Input Section -->
+    <section class="hero-section" id="hero-section">
+      <div class="hero-header">
+        <div class="hero-pill">Autonomous Multi-Agent Intelligence Engine</div>
+        <h1 class="hero-title">Conduct deep research with verified evidence.</h1>
+        <p class="hero-subtitle">
+          Submit any topic or attach documents (PDF, Word, Text, CSV). Six specialized AI agents plan, retrieve, verify claims, analyze data, and synthesize comprehensive reports.
+        </p>
+      </div>
+
+      <div class="query-box">
+        <form id="research-form" class="research-form">
+          <!-- Text Input Row -->
+          <div class="input-row">
+            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <textarea 
+              id="objective-input" 
+              class="objective-textarea"
+              placeholder="What would you like to research? (e.g., Analyze the Indian EV market and identify investment opportunities for 2027, or attach a document below)..." 
+              rows="2"
+            ></textarea>
+          </div>
+
+          <!-- File Upload Attachment Box / Drag Drop Area -->
+          <div class="file-drop-zone" id="file-drop-zone">
+            <input type="file" id="file-input" class="hidden-file-input" accept=".pdf,.docx,.doc,.txt,.md,.csv,.json,.tsv">
+            
+            <div class="file-drop-content" id="file-drop-idle">
+              <button type="button" class="file-browse-btn" id="file-browse-btn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+                <span>Attach Document</span>
+              </button>
+              <span class="file-drop-hint">Drop PDF, DOCX, TXT, CSV, or JSON file to analyze</span>
+            </div>
+
+            <div class="file-selected-badge hidden" id="file-selected-badge">
+              <div class="file-meta">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span class="file-name" id="file-name-display">filename.pdf</span>
+                <span class="file-size" id="file-size-display">(0 KB)</span>
+              </div>
+              <button type="button" class="file-remove-btn" id="file-remove-btn" title="Remove attached file">&times;</button>
+            </div>
+          </div>
+
+          <!-- Bottom Action Row -->
+          <div class="form-actions-row">
+            <div class="sample-chips">
+              <span class="chips-label">Quick Prompts:</span>
+              <button type="button" class="chip" data-prompt="Analyze the Indian EV market and identify investment opportunities for 2027">Indian EV Market 2027</button>
+              <button type="button" class="chip" data-prompt="Commercial breakthroughs in solid-state batteries and supply chain bottlenecks">Solid-State Batteries</button>
+              <button type="button" class="chip" data-prompt="Enterprise adoption of autonomous agentic AI workflows and measured ROI">Agentic AI Workflows</button>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn btn-primary">
+              <span id="submit-btn-text">Start Research</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Workspace Section -->
+    <section class="workspace-section hidden" id="workspace-section">
+      
+      <!-- Session Header Bar -->
+      <div class="session-bar">
+        <div class="session-info">
+          <div class="session-meta">
+            <span class="badge badge-mono" id="current-job-id-tag">JOB #--------</span>
+            <span class="attached-file-tag hidden" id="workspace-file-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+              <span id="workspace-file-name">file.pdf</span>
+            </span>
+          </div>
+          <h2 class="session-title" id="active-objective-title">Research Objective</h2>
+        </div>
+
+        <div class="session-exports hidden" id="export-actions-bar">
+          <a href="#" id="export-pdf-btn" class="btn btn-sm btn-outline" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            PDF
+          </a>
+          <a href="#" id="export-docx-btn" class="btn btn-sm btn-outline" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            DOCX
+          </a>
+          <a href="#" id="export-pptx-btn" class="btn btn-sm btn-outline" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line></svg>
+            PPTX
+          </a>
+        </div>
+      </div>
+
+      <!-- Agent Pipeline Stepper -->
+      <div class="stepper-card">
+        <div class="stepper-track">
+          <div class="step-item" id="step-planner" data-step="planner">
+            <div class="step-badge">1</div>
+            <div class="step-label">
+              <span class="step-title">Planner</span>
+              <span class="step-desc">Decomposition</span>
+            </div>
+          </div>
+          <div class="step-connector" id="line-1"></div>
+
+          <div class="step-item" id="step-retriever" data-step="retriever">
+            <div class="step-badge">2</div>
+            <div class="step-label">
+              <span class="step-title">Retriever</span>
+              <span class="step-desc">Web & Files</span>
+            </div>
+          </div>
+          <div class="step-connector" id="line-2"></div>
+
+          <div class="step-item" id="step-verifier" data-step="verifier">
+            <div class="step-badge">3</div>
+            <div class="step-label">
+              <span class="step-title">Verifier</span>
+              <span class="step-desc">Fact Check</span>
+            </div>
+          </div>
+          <div class="step-connector" id="line-3"></div>
+
+          <div class="step-item" id="step-analyst" data-step="analyst">
+            <div class="step-badge">4</div>
+            <div class="step-label">
+              <span class="step-title">Analyst</span>
+              <span class="step-desc">Metrics & Risk</span>
+            </div>
+          </div>
+          <div class="step-connector" id="line-4"></div>
+
+          <div class="step-item" id="step-visualizer" data-step="visualizer">
+            <div class="step-badge">5</div>
+            <div class="step-label">
+              <span class="step-title">Visualizer</span>
+              <span class="step-desc">Chart Engine</span>
+            </div>
+          </div>
+          <div class="step-connector" id="line-5"></div>
+
+          <div class="step-item" id="step-writer" data-step="writer">
+            <div class="step-badge">6</div>
+            <div class="step-label">
+              <span class="step-title">Writer</span>
+              <span class="step-desc">Synthesis</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry Log -->
+        <div class="telemetry-box">
+          <div class="telemetry-header">
+            <span class="telemetry-title">Agent Telemetry</span>
+            <button type="button" class="btn-link" id="toggle-logs-btn">Hide Logs</button>
+          </div>
+          <div class="telemetry-logs" id="telemetry-logs">
+            <div class="log-entry">Waiting for pipeline...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Results Workspace -->
+      <div class="results-workspace">
+        <!-- Navigation Tabs -->
+        <div class="tabs-bar">
+          <button type="button" class="tab-item active" data-tab="tab-report">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            Research Report
+          </button>
+          
+          <button type="button" class="tab-item" data-tab="tab-chat" id="tab-chat-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            Interactive Chatbot
+            <span class="tab-badge" id="chat-count-badge">AI</span>
+          </button>
+
+          <button type="button" class="tab-item" data-tab="tab-claims">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+            Verified Claims (<span id="claims-badge-count">0</span>)
+          </button>
+
+          <button type="button" class="tab-item" data-tab="tab-analytics">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            Analytics & Chart
+          </button>
+
+          <button type="button" class="tab-item" data-tab="tab-sources">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            Sources (<span id="sources-badge-count">0</span>)
+          </button>
+        </div>
+
+        <!-- Tab 1: Final Report -->
+        <div class="tab-panel active" id="tab-report">
+          <div class="panel-card">
+            <div class="panel-toolbar">
+              <span class="panel-meta" id="report-timestamp">Status: Awaiting generation</span>
+              <div class="toolbar-actions">
+                <button type="button" class="btn btn-sm btn-outline" id="jump-to-chat-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                  Ask Follow-Up Question
+                </button>
+                <button type="button" class="btn btn-sm btn-outline" id="copy-markdown-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  Copy Markdown
+                </button>
+              </div>
+            </div>
+            <article class="markdown-body" id="report-markdown-container">
+              <div class="empty-state">
+                <div class="spinner"></div>
+                <p>Synthesizing research findings across verified sources...</p>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <!-- Tab 2: Interactive Chatbot -->
+        <div class="tab-panel" id="tab-chat">
+          <div class="chat-container">
+            <!-- Chat Header -->
+            <div class="chat-header">
+              <div>
+                <h3 class="chat-title">Research Analyst Assistant</h3>
+                <p class="chat-subtitle">Ask questions, request summaries, deep dives, or draft communications grounded in this research report.</p>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline" id="clear-chat-view-btn" title="Clear displayed messages">Reset View</button>
+            </div>
+
+            <!-- Quick Follow-up Chips -->
+            <div class="chat-quick-chips">
+              <span class="chips-label">Quick Inquiries:</span>
+              <button type="button" class="chat-chip" data-msg="Summarize the core takeaways in 3 concise executive bullet points.">3 Key Takeaways</button>
+              <button type="button" class="chat-chip" data-msg="What are the biggest risks and what mitigation strategies are recommended?">Key Risks & Mitigation</button>
+              <button type="button" class="chat-chip" data-msg="Explain the methodology, data verification confidence, and key sources cited.">Verification & Sources</button>
+              <button type="button" class="chat-chip" data-msg="Draft a brief email briefing to leadership summarizing these findings.">Draft Email to Leadership</button>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="chat-messages" id="chat-messages-container">
+              <div class="chat-message assistant">
+                <div class="message-avatar">AI</div>
+                <div class="message-content">
+                  <p>Hello! I am your OmniResearch Analyst. Once research completes, ask me anything about the report, claims, statistics, or attached documents.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <form id="chat-form" class="chat-input-bar">
+              <input 
+                type="text" 
+                id="chat-input" 
+                class="chat-text-input"
+                placeholder="Ask a question about this research (e.g., 'What are the main financial projections?' or 'Can you expand on section 3?')..."
+                autocomplete="off"
+              >
+              <button type="submit" id="chat-send-btn" class="btn btn-primary btn-icon-only" title="Send message">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tab 3: Verified Claims -->
+        <div class="tab-panel" id="tab-claims">
+          <div class="claims-summary-grid">
+            <div class="stat-card">
+              <span class="stat-num" id="total-claims-count">0</span>
+              <span class="stat-label">Total Claims Tested</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-num" id="verified-claims-count">0</span>
+              <span class="stat-label">Fully Verified (&ge;70%)</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-num" id="partly-claims-count">0</span>
+              <span class="stat-label">Partly Verified (45-69%)</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-num" id="unverified-claims-count">0</span>
+              <span class="stat-label">Unverified (&lt;45%)</span>
+            </div>
+          </div>
+          <div class="claims-stack" id="claims-stack-container">
+            <div class="empty-state">Verification stage in progress...</div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Analytics & Visualizer -->
+        <div class="tab-panel" id="tab-analytics">
+          <div class="analytics-layout">
+            <div class="chart-card">
+              <h4 class="card-heading">Quantitative Visualization</h4>
+              <div class="chart-display" id="chart-display-container">
+                <div class="empty-state">Chart will render upon Visualizer stage completion.</div>
+              </div>
+            </div>
+
+            <div class="insights-columns">
+              <div class="insights-card">
+                <h4 class="card-heading">Strategic Insights</h4>
+                <ul class="bullet-list" id="insights-list">
+                  <li class="muted-entry">Analyzing findings...</li>
+                </ul>
+              </div>
+              <div class="insights-card">
+                <h4 class="card-heading">Risks & Vulnerabilities</h4>
+                <ul class="bullet-list" id="risks-list">
+                  <li class="muted-entry">Analyzing risks...</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Sources & Documents -->
+        <div class="tab-panel" id="tab-sources">
+          <div class="sources-meta-bar">
+            <span id="sources-dedupe-text">Deduplication: 0 near-identical items eliminated</span>
+          </div>
+          <div class="sources-grid" id="sources-grid-container">
+            <div class="empty-state">Retriever agent querying web and documents...</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- History Drawer -->
+  <aside class="drawer" id="history-drawer">
+    <div class="drawer-header">
+      <h3 class="drawer-title">Research History</h3>
+      <button type="button" class="btn-close" id="drawer-close-btn">&times;</button>
+    </div>
+    <div class="drawer-body" id="history-items-container">
+      <div class="empty-state">Loading history...</div>
+    </div>
+  </aside>
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+  <!-- Notification Toast -->
+  <div class="toast" id="toast">Notification</div>
+
+  <script src="/static/app.js?v=20261009_v4"></script>
+</body>
+</html>
