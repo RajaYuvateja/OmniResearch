@@ -1,4 +1,4 @@
-// OmniResearch — Minimalist Web Client with File Upload & Interactive Chatbot
+// OmniResearch — Minimalist Web Client with File Upload, Interactive Chatbot & Production API Config
 document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements
   const form = document.getElementById("research-form");
@@ -51,6 +51,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const newResearchBtn = document.getElementById("new-research-btn");
   const toast = document.getElementById("toast");
 
+  // API Settings Modal Elements
+  const apiSettingsBtn = document.getElementById("api-settings-btn");
+  const apiModalBackdrop = document.getElementById("api-modal-backdrop");
+  const apiModalCloseBtn = document.getElementById("api-modal-close-btn");
+  const apiBaseInput = document.getElementById("api-base-input");
+  const apiProbeResult = document.getElementById("api-probe-result");
+  const apiTestBtn = document.getElementById("api-test-btn");
+  const apiSaveBtn = document.getElementById("api-save-btn");
+  const apiStatusPill = document.getElementById("api-status-pill");
+
   // State
   let activeJobId = null;
   let activeJobData = null;
@@ -61,11 +71,118 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const STAGES_ORDER = ["planner", "retriever", "verifier", "analyst", "visualizer", "writer"];
 
+  // ----------------- CONFIGURABLE API BASE URL -----------------
+  function getApiBase() {
+    // 1. Check window.OMNI_API_BASE (set via config.js on static hosting like Vercel)
+    if (window.OMNI_API_BASE && window.OMNI_API_BASE.trim()) {
+      return window.OMNI_API_BASE.trim().replace(/\/+$/, "");
+    }
+    // 2. Check localStorage (custom user override)
+    const stored = localStorage.getItem("omni_api_base");
+    if (stored && stored.trim()) {
+      return stored.trim().replace(/\/+$/, "");
+    }
+    // 3. Fallback to same-origin relative endpoints
+    return "";
+  }
+
+  function apiUrl(endpoint) {
+    const base = getApiBase();
+    if (!base) return endpoint;
+    const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    return `${base}${cleanEndpoint}`;
+  }
+
+  // Probe backend health to update UI indicator
+  async function checkBackendHealth() {
+    const base = getApiBase();
+    if (apiStatusPill) {
+      apiStatusPill.textContent = base ? "Connecting..." : "Backend: Local";
+    }
+    try {
+      const res = await fetch(apiUrl("/health"));
+      if (res.ok) {
+        const data = await res.json();
+        const dbType = data.database ? ` (${data.database})` : "";
+        if (apiStatusPill) {
+          apiStatusPill.textContent = base ? `Backend: Online${dbType}` : `Backend: Local${dbType}`;
+          apiStatusPill.style.color = "#16a34a";
+        }
+      } else {
+        if (apiStatusPill) {
+          apiStatusPill.textContent = "Backend: HTTP " + res.status;
+          apiStatusPill.style.color = "#dc2626";
+        }
+      }
+    } catch (err) {
+      if (apiStatusPill) {
+        apiStatusPill.textContent = base ? "Backend: Offline" : "Backend: Disconnected";
+        apiStatusPill.style.color = "#dc2626";
+      }
+    }
+  }
+
   // Show Toast
   function showToast(msg) {
     toast.textContent = msg;
     toast.classList.add("show");
     setTimeout(() => toast.classList.remove("show"), 3500);
+  }
+
+  // ----------------- API SETTINGS MODAL -----------------
+  if (apiSettingsBtn && apiModalBackdrop) {
+    apiSettingsBtn.addEventListener("click", () => {
+      apiBaseInput.value = localStorage.getItem("omni_api_base") || window.OMNI_API_BASE || "";
+      apiProbeResult.innerHTML = `Current Base: <code>${getApiBase() || "(Same Origin)"}</code>`;
+      apiProbeResult.style.color = "inherit";
+      apiModalBackdrop.classList.remove("hidden");
+    });
+
+    apiModalCloseBtn.addEventListener("click", () => {
+      apiModalBackdrop.classList.add("hidden");
+    });
+
+    apiModalBackdrop.addEventListener("click", (e) => {
+      if (e.target === apiModalBackdrop) {
+        apiModalBackdrop.classList.add("hidden");
+      }
+    });
+
+    apiTestBtn.addEventListener("click", async () => {
+      const testBase = apiBaseInput.value.trim().replace(/\/+$/, "");
+      const testUrl = testBase ? `${testBase}/health` : "/health";
+      apiProbeResult.innerHTML = "Pinging <code>" + testUrl + "</code>...";
+      apiProbeResult.style.color = "inherit";
+      try {
+        const start = performance.now();
+        const res = await fetch(testUrl);
+        const elapsed = Math.round(performance.now() - start);
+        if (res.ok) {
+          const data = await res.json();
+          apiProbeResult.innerHTML = `<strong>Connected (${elapsed}ms):</strong> Status: ${data.status || "healthy"}, DB: ${data.database || "ok"}`;
+          apiProbeResult.style.color = "#16a34a";
+        } else {
+          apiProbeResult.innerHTML = `<strong>HTTP ${res.status}:</strong> Server returned an error.`;
+          apiProbeResult.style.color = "#dc2626";
+        }
+      } catch (err) {
+        apiProbeResult.innerHTML = `<strong>Connection Failed:</strong> ${err.message}. Check CORS or URL.`;
+        apiProbeResult.style.color = "#dc2626";
+      }
+    });
+
+    apiSaveBtn.addEventListener("click", () => {
+      const newBase = apiBaseInput.value.trim().replace(/\/+$/, "");
+      if (newBase) {
+        localStorage.setItem("omni_api_base", newBase);
+        showToast("Backend URL saved: " + newBase);
+      } else {
+        localStorage.removeItem("omni_api_base");
+        showToast("Using default same-origin / config.js backend URL");
+      }
+      apiModalBackdrop.classList.add("hidden");
+      checkBackendHealth();
+    });
   }
 
   // File Upload Handlers
@@ -207,13 +324,13 @@ document.addEventListener("DOMContentLoaded", () => {
         formData.append("file", attachedFile);
         if (objective) formData.append("objective", objective);
 
-        res = await fetch("/research/upload", {
+        res = await fetch(apiUrl("/research/upload"), {
           method: "POST",
           body: formData
         });
       } else {
         // Standard JSON query
-        res = await fetch("/research", {
+        res = await fetch(apiUrl("/research"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ objective })
@@ -289,7 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(async () => {
       try {
-        const res = await fetch(`/research/${jid}`);
+        const res = await fetch(apiUrl(`/research/${jid}`));
         if (!res.ok) return;
         const job = await res.json();
         activeJobData = job;
@@ -362,9 +479,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Export Links
     exportActionsBar.classList.remove("hidden");
-    exportPdfBtn.href = `/research/${job.id}/export/pdf`;
-    exportDocxBtn.href = `/research/${job.id}/export/docx`;
-    exportPptxBtn.href = `/research/${job.id}/export/pptx`;
+    exportPdfBtn.href = apiUrl(`/research/${job.id}/export/pdf`);
+    exportDocxBtn.href = apiUrl(`/research/${job.id}/export/docx`);
+    exportPptxBtn.href = apiUrl(`/research/${job.id}/export/pptx`);
 
     // 3. Claims
     const claims = job.claims || [];
@@ -404,7 +521,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // 4. Analytics & Chart
     const analysis = job.analysis || {};
     const chartDisplay = document.getElementById("chart-display-container");
-    chartDisplay.innerHTML = `<img src="/research/${job.id}/chart" alt="Analytics Chart" class="chart-img" onerror="this.parentElement.innerHTML='<div class=\\'empty-state\\'>No numeric chart generated for this objective.</div>'">`;
+    const chartSrc = apiUrl(`/research/${job.id}/chart`);
+    chartDisplay.innerHTML = `<img src="${chartSrc}" alt="Analytics Chart" class="chart-img" onerror="this.parentElement.innerHTML='<div class=\\'empty-state\\'>No numeric chart generated for this objective.</div>'">`;
 
     const insights = analysis.insights || [];
     const risks = analysis.risks || [];
@@ -448,7 +566,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadJobChatHistory(jid) {
     try {
-      const res = await fetch(`/research/${jid}/chat`);
+      const res = await fetch(apiUrl(`/research/${jid}/chat`));
       if (!res.ok) return;
       const data = await res.json();
       const history = data.history || [];
@@ -525,7 +643,7 @@ document.addEventListener("DOMContentLoaded", () => {
     appendTypingIndicator();
 
     try {
-      const res = await fetch(`/research/${activeJobId}/chat`, {
+      const res = await fetch(apiUrl(`/research/${activeJobId}/chat`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message })
@@ -574,7 +692,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadHistory() {
     try {
       historyItemsContainer.innerHTML = `<div class="empty-state">Loading history...</div>`;
-      const res = await fetch("/research");
+      const res = await fetch(apiUrl("/research"));
       if (!res.ok) throw new Error("Could not fetch sessions");
       const list = await res.json();
 
@@ -608,7 +726,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadPastJob(jid) {
     try {
       showToast(`Loading research #${jid}...`);
-      const res = await fetch(`/research/${jid}`);
+      const res = await fetch(apiUrl(`/research/${jid}`));
       if (!res.ok) throw new Error("Job not found");
       const job = await res.json();
       activeJobId = job.id;
@@ -644,4 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
   }
+
+  // Initial probe to update status
+  checkBackendHealth();
 });

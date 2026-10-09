@@ -100,3 +100,33 @@ http://localhost:8001/
 4. **Analyst**: Synthesizes market insights, risks, and extracts strict numerical metrics for visualization.
 5. **Visualizer**: Generates clean monochrome quantitative charts using Matplotlib.
 6. **Writer**: Produces a structured Markdown report with `[n]` source footnotes and executive recommendations.
+
+---
+
+## Production Deployment (Render + Vercel)
+
+### 1. Backend on Render (FastAPI + PostgreSQL)
+1. **Create PostgreSQL Database on Render**:
+   - In Render Dashboard, click **New +** → **PostgreSQL**.
+   - Note the **Internal Database URL** (or External Database URL).
+2. **Deploy Web Service**:
+   - Click **New +** → **Web Service** → Connect your GitHub repository `RajaYuvateja/OmniResearch`.
+   - **Root Directory**: `omniresearch` (or leave empty if repository root).
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Environment Variables**:
+     - `GROQ_API_KEY`: Your Groq API key
+     - `TAVILY_API_KEY`: Your Tavily API key
+     - `DATABASE_URL`: Connection string from your Render PostgreSQL instance
+     - `FRONTEND_URL`: Your Vercel frontend URL (e.g. `https://your-frontend.vercel.app`)
+
+*(Alternatively, use the included `render.yaml` Blueprint for 1-click automatic provisioning of both the Web Service and PostgreSQL database).*
+
+### 2. Frontend on Vercel
+1. Import repository on [Vercel](https://vercel.com/new).
+2. **Root Directory**: Select `omniresearch/app/static` (or `app/static`).
+3. **Build & Development Settings**:
+   - Framework Preset: **Other**
+   - Build Command: *(leave blank)*
+   - Output Directory: *(leave blank)*
+4. Set your deployed Render backend URL in `config.js` (`window.OMNI_API_BASE = "https://your-backend.onrender.com"`) or use the in-app **Backend Settings** modal.

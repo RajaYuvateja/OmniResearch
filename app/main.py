@@ -16,10 +16,26 @@ from .file_utils import extract_text_from_file
 
 app = FastAPI(title="OmniResearch", version="1.2")
 
-# Enable CORS for frontend integration
+# Production CORS configuration
+FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
+allowed_origins = ["*"]
+if FRONTEND_URL and FRONTEND_URL != "*":
+    clean_frontend = FRONTEND_URL.rstrip("/")
+    allowed_origins = [
+        clean_frontend,
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8000",
+        "http://localhost:8001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:8001",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins if FRONTEND_URL and FRONTEND_URL != "*" else ["*"],
+    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$" if FRONTEND_URL and FRONTEND_URL != "*" else None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -109,6 +125,27 @@ def static_file(filename: str):
         resp.headers["Pragma"] = "no-cache"
         resp.headers["Expires"] = "0"
         return resp
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/config.js")
+def get_config_js():
+    target = os.path.join(STATIC_DIR, "config.js")
+    if os.path.exists(target):
+        return FileResponse(target, media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/app.js")
+def get_app_js():
+    target = os.path.join(STATIC_DIR, "app.js")
+    if os.path.exists(target):
+        return FileResponse(target, media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/style.css")
+def get_style_css():
+    target = os.path.join(STATIC_DIR, "style.css")
+    if os.path.exists(target):
+        return FileResponse(target, media_type="text/css")
     raise HTTPException(status_code=404, detail="File not found")
 
 @app.post("/research")
@@ -281,4 +318,12 @@ def get_chat(jid: str):
 
 @app.get("/health")
 def health():
-    return {"ok": True, "worker_active": True, "database": "sqlite", "file_upload": True, "chat_enabled": True}
+    db_health = db.check_db_health()
+    return {
+        "status": "healthy" if db_health.get("healthy") else "degraded",
+        "database": db_health.get("engine", "unknown"),
+        "database_connected": db_health.get("healthy", False),
+        "worker_active": True,
+        "file_upload": True,
+        "chat_enabled": True
+    }

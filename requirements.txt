@@ -10,3 +10,4 @@ fastembed>=0.3.0
 aiofiles>=24.1.0
 pypdf>=5.0.0
 python-multipart>=0.0.9
+psycopg2-binary>=2.9.9

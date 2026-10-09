@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css?v=20261009_v4">
+  <link rel="stylesheet" href="style.css?v=20261010_prod">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     /* Inlined Core Minimalist Styles to guarantee instant render without cache delays */
@@ -303,6 +303,9 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .toast { position: fixed; bottom: 24px; right: 24px; background: var(--black); color: var(--white); padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); z-index: 200; opacity: 0; transform: translateY(10px); transition: var(--transition); pointer-events: none; }
     .toast.show { opacity: 1; transform: translateY(0); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 150; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+    .api-modal { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); width: 92%; max-width: 480px; box-shadow: var(--shadow-lg); overflow: hidden; }
+    .api-modal-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .hidden { display: none !important; }
 
     @media (max-width: 768px) {
@@ -355,6 +358,14 @@
           <polyline points="12 6 12 12 16 14"></polyline>
         </svg>
         <span>History</span>
+      </button>
+
+      <button class="btn btn-outline" id="api-settings-btn" title="Configure Backend API URL & Check Status">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span id="api-status-pill">Backend: Local</span>
       </button>
 
       <a href="/docs" target="_blank" class="btn btn-ghost" title="Interactive API Docs">API</a>
@@ -724,9 +735,36 @@
   </aside>
   <div class="drawer-backdrop" id="drawer-backdrop"></div>
 
+  <!-- API Settings Modal -->
+  <div class="modal-backdrop hidden" id="api-modal-backdrop">
+    <div class="api-modal">
+      <div class="api-modal-header">
+        <h3 class="drawer-title" style="margin:0;">Backend Connection Settings</h3>
+        <button type="button" class="btn-close" id="api-modal-close-btn">&times;</button>
+      </div>
+      <div class="api-modal-body" style="padding: 18px 20px;">
+        <p style="color:var(--text-secondary); font-size:12px; margin-bottom:14px; line-height:1.5;">
+          When hosting this frontend on <strong>Vercel</strong>, connect to your hosted <strong>Render backend</strong> (e.g., <code>https://your-backend.onrender.com</code>). For local use, leave empty.
+        </p>
+        <div style="margin-bottom: 12px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Render Backend URL</label>
+          <input type="url" id="api-base-input" placeholder="https://your-backend.onrender.com" style="width:100%; box-sizing:border-box; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:inherit;">
+        </div>
+        <div id="api-probe-result" style="padding:10px 12px; border-radius:var(--radius-sm); font-size:12px; margin-bottom:16px; background:var(--bg-muted); border:1px solid var(--border);">
+          Status: Ready to test
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn btn-outline" id="api-test-btn">Test Ping</button>
+          <button type="button" class="btn btn-primary" id="api-save-btn">Save & Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Notification Toast -->
   <div class="toast" id="toast">Notification</div>
 
-  <script src="/static/app.js?v=20261009_v4"></script>
+  <script src="config.js"></script>
+  <script src="app.js?v=20261010_prod"></script>
 </body>
 </html>
